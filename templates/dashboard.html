@@ -1,0 +1,162 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Lost and Found</title>
+    <link rel="stylesheet" href="{% static 'css/modern.css' %}">
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <a href="/dashboard/" class="logo">🔍 Lost & Found</a>
+            <nav>
+                <ul>
+                    <li><a href="/dashboard/">Home</a></li>
+                    <li><a href="/items-lost/">Lost Items</a></li>
+                    <li><a href="/items-found/">Found Items</a></li>
+                    <li><a href="/report/">Report Item</a></li>
+                    <li><a href="/profile/">Profile</a></li>
+                    <li><a href="#" id="logoutBtn" class="logout-link">Logout</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="dashboard-header">
+            <div class="dashboard-intro">
+                <h1>Welcome to Lost & Found</h1>
+                <p>Help your community find lost items and reunite them with their owners</p>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="dashboard-actions">
+                <div class="action-card">
+                    <div class="action-icon">📋</div>
+                    <h3>Browse Lost Items</h3>
+                    <p>View items that others have reported as lost</p>
+                    <a href="/items-lost/" class="btn btn-primary">View Lost Items</a>
+                </div>
+
+                <div class="action-card">
+                    <div class="action-icon">🔎</div>
+                    <h3>Browse Found Items</h3>
+                    <p>Check items that have been found</p>
+                    <a href="/items-found/" class="btn btn-primary">View Found Items</a>
+                </div>
+
+                <div class="action-card">
+                    <div class="action-icon">➕</div>
+                    <h3>Report an Item</h3>
+                    <p>Report a lost or found item</p>
+                    <a href="/report/" class="btn btn-success">Report Item</a>
+                </div>
+
+                <div class="action-card">
+                    <div class="action-icon">👤</div>
+                    <h3>My Profile</h3>
+                    <p>View and manage your profile</p>
+                    <a href="/profile/" class="btn btn-secondary">Go to Profile</a>
+                </div>
+            </div>
+
+            <section class="section">
+                <h2 class="section-title">Recent Lost Items</h2>
+                <div id="recentLostContainer"></div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">Recent Found Items</h2>
+                <div id="recentFoundContainer"></div>
+            </section>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Lost & Found Application. All rights reserved.</p>
+    </footer>
+
+    <script src="{% static 'js/api.js' %}?v=2"></script>
+    <script src="{% static 'js/ui.js' %}"></script>
+    <script>
+        API.init('/api');
+
+        function performLogout() {
+            console.log('Logout function called');
+            if (confirm('Are you sure you want to logout?')) {
+                console.log('User confirmed logout, calling API.logout()');
+                API.logout();
+            } else {
+                console.log('User cancelled logout');
+            }
+        }
+
+        function initPage() {
+            if (!UI.requireAuth()) return;
+
+            async function loadDashboard() {
+                try {
+                    const lostContainer = document.getElementById('recentLostContainer');
+                    const foundContainer = document.getElementById('recentFoundContainer');
+
+                    UI.showLoading(lostContainer);
+                    UI.showLoading(foundContainer);
+
+                    const lostItems = await API.getLostItems();
+                    const foundItems = await API.getFoundItems();
+
+                    // Show first 3 recent items
+                    const recentLost = lostItems.results.slice(0, 3);
+                    const recentFound = foundItems.results.slice(0, 3);
+
+                    if (recentLost.length === 0) {
+                        lostContainer.innerHTML = '<div class="empty-state"><p>No lost items reported yet</p></div>';
+                    } else {
+                        lostContainer.innerHTML = '<div class="items-grid">' + 
+                            recentLost.map(item => UI.renderItemCard(item, 'lost')).join('') + 
+                            '</div>';
+                    }
+
+                    if (recentFound.length === 0) {
+                        foundContainer.innerHTML = '<div class="empty-state"><p>No found items reported yet</p></div>';
+                    } else {
+                        foundContainer.innerHTML = '<div class="items-grid">' + 
+                            recentFound.map(item => UI.renderItemCard(item, 'found')).join('') + 
+                            '</div>';
+                    }
+
+                    // Add click handlers to view details
+                    document.querySelectorAll('.btn-details').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            const itemId = btn.dataset.itemId;
+                            const itemType = btn.dataset.itemType;
+                            window.location.href = `/item-detail/?id=${itemId}&type=${itemType}`;
+                        });
+                    });
+
+                } catch (error) {
+                    UI.showMessage(error.message, 'error');
+                }
+            }
+
+            loadDashboard();
+        }
+
+        // Attach logout event listener
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    performLogout();
+                });
+            }
+            initPage();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,277 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Item - Lost and Found</title>
+    <link rel="stylesheet" href="{% static 'css/modern.css' %}">
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <a href="/report/" class="logo">🔍 Lost & Found</a>
+            <nav>
+                <ul>
+                    <li><a href="/dashboard/">Home</a></li>
+                    <li><a href="/items-lost/">Lost Items</a></li>
+                    <li><a href="/items-found/">Found Items</a></li>
+                    <li><a href="/report/">Report Item</a></li>
+                    <li><a href="/profile/">Profile</a></li>
+                    <li><a href="#" id="logoutBtn" class="logout-link">Logout</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <div class="form-container">
+                <h1 style="text-align: center; margin-bottom: 10px;">Report an Item</h1>
+                <p style="text-align: center; color: #7f8c8d; margin-bottom: 30px;">Report a lost or found item to help the community</p>
+
+                <form id="reportForm" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="status">Item Status <span class="required">*</span></label>
+                        <select id="status" name="status" required onchange="updateStatusInfo()">
+                            <option value="">Select Status</option>
+                            <option value="lost">Lost</option>
+                            <option value="found">Found</option>
+                        </select>
+                        <small style="color: #7f8c8d; margin-top: 5px; display: block;" id="statusInfo"></small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="category">Category <span class="required">*</span></label>
+                        <select id="category" name="category" required>
+                            <option value="">Select Category</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="title">Item Title <span class="required">*</span></label>
+                        <input type="text" id="title" name="title" placeholder="e.g., Black iPhone 13" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description">Description <span class="required">*</span></label>
+                        <textarea id="description" name="description" placeholder="Provide details about the item and location where it was found..." required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="location" id="locationLabel">Location <span class="required">*</span></label>
+                        <select id="location" name="location" required>
+                            <option value="">Select Location</option>
+                        </select>
+                        <small style="color: #7f8c8d; margin-top: 5px; display: block;" id="locationHelp"></small>
+                    </div>
+
+                    <div class="form-group" id="droppedLocationGroup" style="display: none;">
+                        <label for="dropped_location">Dropped Location <span class="required">*</span></label>
+                        <select id="dropped_location" name="dropped_location">
+                            <option value="">Select Dropped Location</option>
+                        </select>
+                        <small style="color: #7f8c8d; margin-top: 5px; display: block;">Where the matched owner should go to retrieve the item</small>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="colour">Colour</label>
+                            <input type="text" id="colour" name="colour" placeholder="e.g., Black">
+                        </div>
+                        <div class="form-group">
+                            <label for="brand">Brand</label>
+                            <input type="text" id="brand" name="brand" placeholder="e.g., Apple">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="model">Model</label>
+                            <input type="text" id="model" name="model" placeholder="e.g., iPhone 13">
+                        </div>
+                        <div class="form-group">
+                            <label for="serial_number">Serial Number</label>
+                            <input type="text" id="serial_number" name="serial_number" placeholder="e.g., ABC123XYZ">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="image">Item Image</label>
+                        <input type="file" id="image" name="image" accept="image/*">
+                        <small style="color: #7f8c8d; margin-top: 5px; display: block;">Upload a photo if possible (JPG, PNG, GIF)</small>
+                    </div>
+
+                    <button type="submit" class="btn btn-success btn-block">Report Item</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Lost & Found Application. All rights reserved.</p>
+    </footer>
+
+    <script src="{% static 'js/api.js' %}?v=2"></script>
+    <script src="{% static 'js/ui.js' %}?v=2"></script>
+    <script>
+        API.init('/api');
+
+        // Global function for status info update
+        function updateStatusInfo() {
+            const status = document.getElementById('status').value;
+            const statusInfo = document.getElementById('statusInfo');
+            const locationLabel = document.getElementById('locationLabel');
+            const locationHelp = document.getElementById('locationHelp');
+            const droppedLocationGroup = document.getElementById('droppedLocationGroup');
+            const droppedLocationSelect = document.getElementById('dropped_location');
+            
+            if (status === 'lost') {
+                statusInfo.textContent = 'Report an item you have lost';
+                locationLabel.innerHTML = 'Lost Location <span class="required">*</span>';
+                locationHelp.textContent = 'Where you last had or noticed the item';
+                droppedLocationGroup.style.display = 'none';
+                droppedLocationSelect.required = false;
+                droppedLocationSelect.value = '';
+            } else if (status === 'found') {
+                statusInfo.textContent = 'Report an item you have found';
+                locationLabel.innerHTML = 'Found Location <span class="required">*</span>';
+                locationHelp.textContent = 'Where the item was originally found. This is used for matching.';
+                droppedLocationGroup.style.display = 'block';
+                droppedLocationSelect.required = true;
+            } else {
+                statusInfo.textContent = '';
+                locationLabel.innerHTML = 'Location <span class="required">*</span>';
+                locationHelp.textContent = '';
+                droppedLocationGroup.style.display = 'none';
+                droppedLocationSelect.required = false;
+                droppedLocationSelect.value = '';
+            }
+        }
+
+        function performLogout() {
+            console.log('Logout function called');
+            if (confirm('Are you sure you want to logout?')) {
+                console.log('User confirmed logout, calling API.logout()');
+                API.logout();
+            } else {
+                console.log('User cancelled logout');
+            }
+        }
+
+        function initPage() {
+            if (!UI.requireAuth()) return;
+
+            // Load form dropdown options
+            async function loadFormData() {
+                try {
+                    const categories = await API.getCategories();
+                    const locations = await API.getLocations();
+
+                    const categorySelect = document.getElementById('category');
+                    const locationSelect = document.getElementById('location');
+                    const droppedLocationSelect = document.getElementById('dropped_location');
+
+                    if (categories.results && Array.isArray(categories.results)) {
+                        categories.results.forEach(cat => {
+                            const option = document.createElement('option');
+                            option.value = cat.id;
+                            option.textContent = cat.name;
+                            categorySelect.appendChild(option);
+                        });
+                    } else {
+                        console.warn('Categories response format unexpected:', categories);
+                        UI.showMessage('Error loading categories', 'error');
+                    }
+
+                    if (locations.results && Array.isArray(locations.results)) {
+                        locations.results.forEach(loc => {
+                            const option = document.createElement('option');
+                            option.value = loc.id;
+                            option.textContent = loc.name;
+                            locationSelect.appendChild(option);
+                            droppedLocationSelect.appendChild(option.cloneNode(true));
+                        });
+                    } else {
+                        console.warn('Locations response format unexpected:', locations);
+                        UI.showMessage('Error loading locations', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error loading form data:', error);
+                    UI.showMessage('Error loading form data: ' + error.message, 'error');
+                }
+            }
+
+            // Form submission handler
+            document.getElementById('reportForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                // Collect form data
+                const reportData = {
+                    status: document.getElementById('status').value,
+                    category_id: document.getElementById('category').value,
+                    title: document.getElementById('title').value,
+                    description: document.getElementById('description').value,
+                    colour: document.getElementById('colour').value || '',
+                    brand: document.getElementById('brand').value || '',
+                    model: document.getElementById('model').value || '',
+                    serial_number: document.getElementById('serial_number').value || ''
+                };
+
+                // Add location_id only if selected
+                const locationValue = document.getElementById('location').value;
+                if (locationValue) {
+                    reportData.location_id = locationValue;
+                }
+                const droppedLocationValue = document.getElementById('dropped_location').value;
+                if (reportData.status === 'found' && droppedLocationValue) {
+                    reportData.dropped_location_id = droppedLocationValue;
+                }
+
+                // Add image file if selected
+                const imageFile = document.getElementById('image').files[0];
+                if (imageFile) {
+                    reportData.image = imageFile;
+                }
+
+                try {
+                    console.log('Submitting report with data:', reportData);
+                    const response = await API.createItem(reportData);
+                    console.log('Item created successfully:', response);
+                    UI.showMessage('Item reported successfully!', 'success');
+                    
+                    // Redirect after 1.5 seconds
+                    setTimeout(() => {
+                        if (reportData.status === 'lost') {
+                            window.location.href = '/items-lost/';
+                        } else {
+                            window.location.href = '/items-found/';
+                        }
+                    }, 1500);
+                } catch (error) {
+                    console.error('Report submission error:', error);
+                    UI.showMessage(error.message || 'Failed to report item', 'error');
+                }
+            });
+
+            // Load dropdown data on page load
+            loadFormData();
+            updateStatusInfo();
+            
+            // Set up logout button listener
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    performLogout();
+                });
+            }
+        }
+
+        // Attach logout event listener
+        document.addEventListener('DOMContentLoaded', function() {
+            initPage();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,182 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Item Details - Lost and Found</title>
+    <link rel="stylesheet" href="{% static 'css/modern.css' %}">
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <a href="/dashboard/" class="logo">🔍 Lost & Found</a>
+            <nav>
+                <ul>
+                    <li><a href="/dashboard/">Home</a></li>
+                    <li><a href="/items-lost/">Lost Items</a></li>
+                    <li><a href="/items-found/">Found Items</a></li>
+                    <li><a href="/report/">Report Item</a></li>
+                    <li><a href="/profile/">Profile</a></li>
+                    <li><a href="#" id="logoutBtn" class="logout-link">Logout</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <a href="javascript:history.back()" class="btn btn-secondary" style="margin-bottom: 20px;">← Back</a>
+            
+            <div class="item-detail" id="detailContainer"></div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Lost & Found Application. All rights reserved.</p>
+    </footer>
+
+    <script src="{% static 'js/api.js' %}?v=2"></script>
+    <script src="{% static 'js/ui.js' %}"></script>
+    <script>
+        API.init('/api');
+
+        function performLogout() {
+            console.log('Logout function called');
+            if (confirm('Are you sure you want to logout?')) {
+                console.log('User confirmed logout, calling API.logout()');
+                API.logout();
+            } else {
+                console.log('User cancelled logout');
+            }
+        }
+
+        function initPage() {
+            if (!UI.requireAuth()) return;
+
+            async function loadItemDetail() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const itemId = urlParams.get('id');
+                const itemType = urlParams.get('type');
+
+                if (!itemId) {
+                    throw new Error('Item ID not provided');
+                }
+
+                const container = document.getElementById('detailContainer');
+                UI.showLoading(container);
+
+                const item = await API.getItem(itemId, itemType);
+
+                const imageUrl = item.image ? item.image : '/static/assets/img/placeholder.png';
+                const reportedDate = UI.formatDate(item.date_reported);
+                const itemLocation = item.location || item.dropped_location;
+                const isFoundItem = itemType === 'found' || (!!item.dropped_location && 'location' in item);
+
+                let detailHTML = `
+                    <div class="item-detail-header">
+                        <div class="item-detail-image">
+                            <img src="${imageUrl}" alt="${item.title}" onerror="this.src='/static/assets/img/placeholder.png'">
+                        </div>
+                        <div class="item-detail-info">
+                            <h2>${item.title}</h2>
+                            <div style="margin-bottom: 15px;">
+                                <span class="item-status status-${item.status}">${item.status.toUpperCase()}</span>
+                            </div>
+                            
+                            <div class="detail-field">
+                                <div class="detail-label">Category</div>
+                                <div class="detail-value">${item.category.name}</div>
+                            </div>
+                            
+                            <div class="detail-field">
+                                <div class="detail-label">Location</div>
+                                <div class="detail-value">${itemLocation ? itemLocation.name : 'Not specified'}</div>
+                            </div>
+                            ${isFoundItem ? `
+                            <div class="detail-field">
+                                <div class="detail-label">Pickup Location</div>
+                                <div class="detail-value">${item.dropped_location ? item.dropped_location.name : 'Not specified'}</div>
+                            </div>
+                            ` : ''}
+                            
+                            <div class="detail-field">
+                                <div class="detail-label">Reported By</div>
+                                <div class="detail-value">${item.reporter}</div>
+                            </div>
+                            
+                            <div class="detail-field">
+                                <div class="detail-label">Reported Date</div>
+                                <div class="detail-value">${reportedDate}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 30px; padding-top: 30px; border-top: 1px solid #ecf0f1;">
+                        <h3>Description</h3>
+                        <p style="color: #7f8c8d; line-height: 1.8; margin-top: 10px;">${item.description}</p>
+                    </div>
+
+                    ${item.colour ? `
+                        <div style="margin-top: 20px;">
+                            <h4>Colour</h4>
+                            <p style="color: #7f8c8d;">${item.colour}</p>
+                        </div>
+                    ` : ''}
+
+                    ${item.brand ? `
+                        <div style="margin-top: 20px;">
+                            <h4>Brand</h4>
+                            <p style="color: #7f8c8d;">${item.brand}</p>
+                        </div>
+                    ` : ''}
+
+                    ${item.model ? `
+                        <div style="margin-top: 20px;">
+                            <h4>Model</h4>
+                            <p style="color: #7f8c8d;">${item.model}</p>
+                        </div>
+                    ` : ''}
+
+                    ${item.serial_number ? `
+                        <div style="margin-top: 20px;">
+                            <h4>Serial Number</h4>
+                            <p style="color: #7f8c8d;">${item.serial_number}</p>
+                        </div>
+                    ` : ''}
+
+                    ${item.matched_with ? `
+                        <div style="margin-top: 30px; padding: 20px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745;">
+                            <h4 style="color: #155724; margin-bottom: 10px;">✓ Matched Item</h4>
+                            <p style="color: #155724; margin: 0;">This item has been matched with another item. Please contact the item reporter for hand-over details.</p>
+                        </div>
+                    ` : ''}
+                `;
+
+                container.innerHTML = detailHTML;
+
+            } catch (error) {
+                UI.showMessage(error.message, 'error');
+                document.getElementById('detailContainer').innerHTML = 
+                    '<div class="empty-state"><p>Failed to load item details</p></div>';
+            }
+            }
+
+            loadItemDetail();
+        }
+
+        // Attach logout event listener
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    performLogout();
+                });
+            }
+            initPage();
+        });
+    </script>
+</body>
+</html>

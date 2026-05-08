@@ -1,0 +1,170 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Lost and Found</title>
+    <link rel="stylesheet" href="{% static 'css/modern.css' %}">
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <a href="/" class="logo">🔍 Lost & Found</a>
+        </div>
+    </header>
+
+    <main>
+        <div class="auth-container">
+            <div class="auth-card">
+                <h1 class="auth-title">Create Account</h1>
+                <p class="auth-subtitle">Join our lost and found community</p>
+
+                <form id="signupForm" enctype="multipart/form-data">
+                    <div id="signupMessage"></div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="firstname">First Name <span class="required">*</span></label>
+                            <input type="text" id="firstname" name="firstname" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="lastname">Last Name <span class="required">*</span></label>
+                            <input type="text" id="lastname" name="lastname" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email <span class="required">*</span></label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirm_email">Confirm Email <span class="required">*</span></label>
+                        <input type="email" id="confirm_email" name="confirm_email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">Phone Number <span class="required">*</span></label>
+                        <input type="tel" id="phone" name="phone" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="gender">Gender <span class="required">*</span></label>
+                        <select id="gender" name="gender" required>
+                            <option value="">Select Gender</option>
+                            <option value="MALE">Male</option>
+                            <option value="FEMALE">Female</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="user_type">User Type <span class="required">*</span></label>
+                        <select id="user_type" name="user_type" required onchange="updateIdField()">
+                            <option value="">Select User Type</option>
+                            <option value="STUDENTS">Student</option>
+                            <option value="STAFFS">Staff</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="idFieldContainer" style="display: none;">
+                        <label for="id_field"><span id="idLabel">Student ID</span> <span class="required">*</span></label>
+                        <input type="text" id="id_field" name="id_field">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password <span class="required">*</span></label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="profile_picture">Profile Picture</label>
+                        <input type="file" id="profile_picture" name="profile_picture" accept="image/*">
+                        <small style="color: #7f8c8d; margin-top: 5px; display: block;">Optional: upload a profile photo</small>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+                </form>
+
+                <div class="auth-link">
+                    Already have an account? <a href="/login/">Sign in</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Lost & Found Application. All rights reserved.</p>
+    </footer>
+
+    <script src="{% static 'js/api.js' %}?v=2"></script>
+    <script src="{% static 'js/ui.js' %}"></script>
+    <script>
+        API.init('/api');
+
+        function updateIdField() {
+            const userType = document.getElementById('user_type').value;
+            const idFieldContainer = document.getElementById('idFieldContainer');
+            const idLabel = document.getElementById('idLabel');
+            const idField = document.getElementById('id_field');
+
+            if (userType === 'STUDENTS') {
+                idFieldContainer.style.display = 'block';
+                idLabel.textContent = 'Student ID';
+                idField.name = 'student_id';
+            } else if (userType === 'STAFFS') {
+                idFieldContainer.style.display = 'block';
+                idLabel.textContent = 'Staff ID';
+                idField.name = 'staff_id';
+            } else {
+                idFieldContainer.style.display = 'none';
+            }
+        }
+
+        document.getElementById('signupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value.trim();
+            const confirmEmail = document.getElementById('confirm_email').value.trim();
+
+            if (email.toLowerCase() !== confirmEmail.toLowerCase()) {
+                UI.showFormMessage('Email addresses do not match.', 'error', 'signupMessage');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('firstname', document.getElementById('firstname').value);
+            formData.append('lastname', document.getElementById('lastname').value);
+            formData.append('email', email);
+            formData.append('confirm_email', confirmEmail);
+            formData.append('phone', document.getElementById('phone').value);
+            formData.append('gender', document.getElementById('gender').value);
+            formData.append('user_type', document.getElementById('user_type').value);
+            formData.append('password', document.getElementById('password').value);
+
+            const userType = document.getElementById('user_type').value;
+            const idValue = document.getElementById('id_field').value;
+            const profilePicture = document.getElementById('profile_picture').files[0];
+
+            if (userType === 'STUDENTS') {
+                formData.append('student_id', idValue);
+            } else if (userType === 'STAFFS') {
+                formData.append('staff_id', idValue);
+            }
+
+            if (profilePicture) {
+                formData.append('profile_picture', profilePicture);
+            }
+
+            try {
+                const response = await API.signup(formData);
+                UI.showFormMessage(response.detail || 'Account created. Check your email to verify your account before signing in.', 'success', 'signupMessage');
+                setTimeout(() => {
+                    window.location.href = '/login/';
+                }, 2500);
+            } catch (error) {
+                UI.showFormMessage(error.message || 'Signup failed', 'error', 'signupMessage');
+            }
+        });
+    </script>
+</body>
+</html>

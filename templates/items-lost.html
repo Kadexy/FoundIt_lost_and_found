@@ -1,0 +1,185 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lost Items - Lost and Found</title>
+    <link rel="stylesheet" href="{% static 'css/modern.css' %}">
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <a href="/dashboard/" class="logo">🔍 Lost & Found</a>
+            <nav>
+                <ul>
+                    <li><a href="/dashboard/">Home</a></li>
+                    <li><a href="/items-lost/">Lost Items</a></li>
+                    <li><a href="/items-found/">Found Items</a></li>
+                    <li><a href="/report/">Report Item</a></li>
+                    <li><a href="/profile/">Profile</a></li>
+                    <li><a href="#" id="logoutBtn" class="logout-link">Logout</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <section class="section">
+                <h2 class="section-title">Lost Items</h2>
+                
+                <div class="section-filters">
+                    <div class="filter-group">
+                        <label for="categoryFilter">Category:</label>
+                        <select id="categoryFilter" onchange="applyFilters()">
+                            <option value="">All Categories</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="locationFilter">Location:</label>
+                        <select id="locationFilter" onchange="applyFilters()">
+                            <option value="">All Locations</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="searchFilter">Search:</label>
+                        <input type="text" id="searchFilter" placeholder="Search items..." onkeyup="applyFilters()">
+                    </div>
+                </div>
+
+                <div id="itemsContainer"></div>
+            </section>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Lost & Found Application. All rights reserved.</p>
+    </footer>
+
+    <script src="{% static 'js/api.js' %}?v=2"></script>
+    <script src="{% static 'js/ui.js' %}"></script>
+    <script>
+        API.init('/api');
+
+        let allLostItems = [];
+        let allCategories = [];
+        let allLocations = [];
+
+        function initPage() {
+            if (!UI.requireAuth()) return;
+            loadItems();
+        }
+
+        async function loadItems() {
+            try {
+                const container = document.getElementById('itemsContainer');
+                UI.showLoading(container);
+
+                allLostItems = await API.getLostItems();
+                allCategories = await API.getCategories();
+                allLocations = await API.getLocations();
+
+                // Populate filter dropdowns
+                populateFilters();
+
+                // Display items
+                displayItems(allLostItems.results);
+            } catch (error) {
+                UI.showMessage(error.message, 'error');
+                document.getElementById('itemsContainer').innerHTML = 
+                    '<div class="empty-state"><p>Failed to load items</p></div>';
+            }
+        }
+
+        function populateFilters() {
+            const categorySelect = document.getElementById('categoryFilter');
+            const locationSelect = document.getElementById('locationFilter');
+
+            allCategories.results.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.id;
+                option.textContent = cat.name;
+                categorySelect.appendChild(option);
+            });
+
+            allLocations.results.forEach(loc => {
+                const option = document.createElement('option');
+                option.value = loc.id;
+                option.textContent = loc.name;
+                locationSelect.appendChild(option);
+            });
+        }
+
+        function displayItems(items) {
+            const container = document.getElementById('itemsContainer');
+            
+            if (items.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><h3>No items found</h3><p>Try adjusting your filters or check back later</p></div>';
+                return;
+            }
+
+            container.innerHTML = '<div class="items-grid">' + 
+                items.map(item => UI.renderItemCard(item, 'lost')).join('') + 
+                '</div>';
+
+            // Add click handlers
+            document.querySelectorAll('.btn-details').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const itemId = btn.dataset.itemId;
+                    const itemType = btn.dataset.itemType;
+                    window.location.href = `/item-detail/?id=${itemId}&type=${itemType}`;
+                });
+            });
+        }
+
+        function applyFilters() {
+            let filtered = [...allLostItems.results];
+
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const locationFilter = document.getElementById('locationFilter').value;
+            const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
+
+            if (categoryFilter) {
+                filtered = filtered.filter(item => item.category.id == categoryFilter);
+            }
+
+            if (locationFilter) {
+                filtered = filtered.filter(item => item.location && item.location.id == locationFilter);
+            }
+
+            if (searchFilter) {
+                filtered = filtered.filter(item => 
+                    item.title.toLowerCase().includes(searchFilter) ||
+                    item.description.toLowerCase().includes(searchFilter)
+                );
+            }
+
+            displayItems(filtered);
+        }
+
+        function performLogout() {
+            console.log('Logout function called');
+            if (confirm('Are you sure you want to logout?')) {
+                console.log('User confirmed logout, calling API.logout()');
+                API.logout();
+            } else {
+                console.log('User cancelled logout');
+            }
+        }
+
+        // Attach logout event listener
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    performLogout();
+                });
+            }
+            initPage();
+        });
+    </script>
+</body>
+</html>

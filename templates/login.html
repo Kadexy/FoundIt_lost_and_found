@@ -1,0 +1,81 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Lost and Found</title>
+    <link rel="stylesheet" href="{% static 'css/modern.css' %}">
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <a href="/" class="logo">🔍 Lost & Found</a>
+        </div>
+    </header>
+
+    <main>
+        <div class="auth-container">
+            <div class="auth-card">
+                <h1 class="auth-title">Welcome Back</h1>
+                <p class="auth-subtitle">Sign in to your account</p>
+
+                <form id="loginForm">
+                    <div id="loginMessage"></div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+                </form>
+
+                <div class="auth-link">
+                    Don't have an account? <a href="/signup/">Create one</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Lost & Found Application. All rights reserved.</p>
+    </footer>
+
+    <script src="{% static 'js/api.js' %}?v=2"></script>
+    <script src="{% static 'js/ui.js' %}"></script>
+    <script>
+        API.init('/api');
+        API.clearSession();
+
+        const verifiedStatus = new URLSearchParams(window.location.search).get('verified');
+        if (verifiedStatus === 'success') {
+            UI.showFormMessage('Email verified successfully. You can now sign in.', 'success', 'loginMessage');
+        } else if (verifiedStatus === 'invalid') {
+            UI.showFormMessage('This verification link is invalid or has expired.', 'error', 'loginMessage');
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await API.login(email, password);
+                UI.showMessage('Login successful! Redirecting...', 'success');
+                setTimeout(() => {
+                    window.location.href = '/dashboard/';
+                }, 1000);
+            } catch (error) {
+                API.clearSession();
+                UI.showFormMessage(error.message || 'Login failed', 'error');
+            }
+        });
+    </script>
+</body>
+</html>

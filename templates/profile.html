@@ -1,0 +1,343 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - Lost and Found</title>
+    <link rel="stylesheet" href="{% static 'css/modern.css' %}">
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <a href="/profile/" class="logo">Lost & Found</a>
+            <nav>
+                <ul>
+                    <li><a href="/dashboard/">Home</a></li>
+                    <li><a href="/items-lost/">Lost Items</a></li>
+                    <li><a href="/items-found/">Found Items</a></li>
+                    <li><a href="/report/">Report Item</a></li>
+                    <li><a href="/profile/">Profile</a></li>
+                    <li><a href="#" onclick="event.preventDefault(); performLogout()">Logout</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <div class="profile-container">
+                <div class="profile-sidebar">
+                    <div class="profile-picture">
+                        <img id="profilePic" src="{% static 'assets/img/placeholder.png' %}" alt="Profile Picture">
+                    </div>
+                    <div style="margin-top: 16px;">
+                        <form id="profilePictureForm" enctype="multipart/form-data">
+                            <div class="form-group" style="margin-bottom: 10px;">
+                                <label for="newProfilePicture">Change Profile Picture</label>
+                                <input type="file" id="newProfilePicture" accept="image/*">
+                            </div>
+                            <button type="submit" class="btn btn-secondary" style="width: 100%;">Update Photo</button>
+                        </form>
+                    </div>
+                    <div class="profile-info">
+                        <h3 id="userName">Loading...</h3>
+                        <p id="userEmail">email@example.com</p>
+                        <p id="userType" style="font-size: 12px; color: #3498db; font-weight: bold;"></p>
+                    </div>
+                    <ul class="profile-menu">
+                        <li><a href="#overview" onclick="showSection('overview')">Overview</a></li>
+                        <li><a href="#my-items" onclick="showSection('my-items')">My Items</a></li>
+                        <li><a href="#settings" onclick="showSection('settings')">Settings</a></li>
+                        <li><a href="#" id="logoutBtn" class="logout-link">Logout</a></li>
+                    </ul>
+                </div>
+
+                <div class="profile-main">
+                    <div id="overview" class="profile-section">
+                        <h2 style="margin-bottom: 30px;">Profile Information</h2>
+
+                        <div style="margin-bottom: 30px;">
+                            <h3 style="margin-bottom: 15px;">Personal Information</h3>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                                <div>
+                                    <p style="color: #7f8c8d; font-size: 12px; font-weight: 600; margin-bottom: 5px;">FIRST NAME</p>
+                                    <p id="firstName" style="font-size: 16px;">-</p>
+                                </div>
+                                <div>
+                                    <p style="color: #7f8c8d; font-size: 12px; font-weight: 600; margin-bottom: 5px;">LAST NAME</p>
+                                    <p id="lastName" style="font-size: 16px;">-</p>
+                                </div>
+                                <div>
+                                    <p style="color: #7f8c8d; font-size: 12px; font-weight: 600; margin-bottom: 5px;">EMAIL</p>
+                                    <p id="emailDisplay" style="font-size: 16px;">-</p>
+                                </div>
+                                <div>
+                                    <p style="color: #7f8c8d; font-size: 12px; font-weight: 600; margin-bottom: 5px;">USER ID</p>
+                                    <p id="userIdDisplay" style="font-size: 16px;">-</p>
+                                </div>
+                                <div>
+                                    <p style="color: #7f8c8d; font-size: 12px; font-weight: 600; margin-bottom: 5px;">PHONE</p>
+                                    <p id="phone" style="font-size: 16px;">-</p>
+                                </div>
+                                <div>
+                                    <p style="color: #7f8c8d; font-size: 12px; font-weight: 600; margin-bottom: 5px;">GENDER</p>
+                                    <p id="gender" style="font-size: 16px;">-</p>
+                                </div>
+                                <div>
+                                    <p style="color: #7f8c8d; font-size: 12px; font-weight: 600; margin-bottom: 5px;">USER TYPE</p>
+                                    <p id="userTypeDisplay" style="font-size: 16px;">-</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 style="margin-bottom: 15px;">Statistics</h3>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                                <div style="background: #ecf0f1; padding: 20px; border-radius: 8px; text-align: center;">
+                                    <div style="font-size: 32px; font-weight: bold; color: #2c3e50; margin-bottom: 5px;" id="lostCount">0</div>
+                                    <div style="color: #7f8c8d;">Items Reported Lost</div>
+                                </div>
+                                <div style="background: #ecf0f1; padding: 20px; border-radius: 8px; text-align: center;">
+                                    <div style="font-size: 32px; font-weight: bold; color: #2c3e50; margin-bottom: 5px;" id="foundCount">0</div>
+                                    <div style="color: #7f8c8d;">Items Found</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="my-items" class="profile-section" style="display: none;">
+                        <h2 style="margin-bottom: 30px;">My Reported Items</h2>
+                        <div id="myItemsContainer"></div>
+                    </div>
+
+                    <div id="settings" class="profile-section" style="display: none;">
+                        <h2 style="margin-bottom: 30px;">Account Settings</h2>
+                        <div id="settingsMessage"></div>
+
+                        <div style="background: #ffffff; padding: 24px; border-radius: 8px; border: 1px solid #ecf0f1; margin-bottom: 24px;">
+                            <h3 style="margin-bottom: 16px;">Change Password</h3>
+                            <form id="changePasswordForm">
+                                <div class="form-group">
+                                    <label for="currentPassword">Current Password</label>
+                                    <input type="password" id="currentPassword" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="newPassword">New Password</label>
+                                    <input type="password" id="newPassword" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="confirmPassword">Confirm New Password</label>
+                                    <input type="password" id="confirmPassword" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Update Password</button>
+                            </form>
+                        </div>
+
+                        <div style="background: #fff5f5; padding: 24px; border-radius: 8px; border: 1px solid #f5c6cb;">
+                            <h3 style="margin-bottom: 12px; color: #c0392b;">Delete Account</h3>
+                            <p style="color: #7f8c8d; margin-bottom: 16px;">This permanently removes your account and reported items.</p>
+                            <form id="deleteAccountForm">
+                                <div class="form-group">
+                                    <label for="deletePassword">Confirm Password</label>
+                                    <input type="password" id="deletePassword" required>
+                                </div>
+                                <button type="submit" class="btn" style="background: #e74c3c; color: #fff;">Delete Account</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Lost & Found Application. All rights reserved.</p>
+    </footer>
+
+    <script src="{% static 'js/api.js' %}?v=2"></script>
+    <script src="{% static 'js/ui.js' %}"></script>
+    <script>
+        function initProfilePage() {
+            API.init('/api');
+
+            if (!UI.requireAuth()) {
+                return;
+            }
+
+            loadUserProfile();
+        }
+
+        async function loadUserProfile() {
+            try {
+                const user = API.getCurrentUser();
+                document.getElementById('userEmail').textContent = user.email;
+                document.getElementById('emailDisplay').textContent = user.email;
+
+                loadProfileData();
+                loadMyItems();
+            } catch (error) {
+                UI.showMessage(error.message, 'error');
+            }
+        }
+
+        async function loadProfileData() {
+            try {
+                const profile = await API.getProfile();
+
+                document.getElementById('userName').textContent = `${profile.firstname} ${profile.lastname}`.trim() || profile.email;
+                document.getElementById('firstName').textContent = profile.firstname || '-';
+                document.getElementById('lastName').textContent = profile.lastname || '-';
+                document.getElementById('userIdDisplay').textContent = profile.id || '-';
+                document.getElementById('phone').textContent = profile.phone || '-';
+                document.getElementById('gender').textContent = profile.gender || '-';
+                document.getElementById('userType').textContent = profile.user_type || '-';
+                document.getElementById('userTypeDisplay').textContent = profile.user_type || '-';
+
+                if (profile.profile_picture) {
+                    document.getElementById('profilePic').src = profile.profile_picture;
+                }
+            } catch (error) {
+                console.error('Error loading profile:', error);
+            }
+        }
+
+        async function loadMyItems() {
+            try {
+                const container = document.getElementById('myItemsContainer');
+                UI.showLoading(container);
+
+                const lostItems = await API.getLostItems();
+                const foundItems = await API.getFoundItems();
+                const user = API.getCurrentUser();
+
+                const myItems = [...lostItems.results, ...foundItems.results].filter(item =>
+                    item.reporter === user.email || item.reporter && item.reporter.includes(user.email)
+                );
+
+                document.getElementById('lostCount').textContent = lostItems.results.length;
+                document.getElementById('foundCount').textContent = foundItems.results.length;
+
+                if (myItems.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><p>You haven\'t reported any items yet</p><a href="/report/" class="btn btn-primary">Report an Item</a></div>';
+                } else {
+                    container.innerHTML = '<div class="items-grid">' +
+                        myItems.map(item => UI.renderItemCard(item)).join('') +
+                        '</div>';
+
+                    document.querySelectorAll('.btn-details').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            const itemId = btn.dataset.itemId;
+                            const itemType = btn.dataset.itemType;
+                            window.location.href = `/item-detail/?id=${itemId}&type=${itemType}`;
+                        });
+                    });
+                }
+            } catch (error) {
+                document.getElementById('myItemsContainer').innerHTML =
+                    '<div class="empty-state"><p>Failed to load your items</p></div>';
+            }
+        }
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.profile-section').forEach(section => {
+                section.style.display = 'none';
+            });
+
+            document.getElementById(sectionId).style.display = 'block';
+        }
+
+        function performLogout() {
+            console.log('Logout function called');
+            if (confirm('Are you sure you want to logout?')) {
+                console.log('User confirmed logout, calling API.logout()');
+                API.logout();
+            } else {
+                console.log('User cancelled logout');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    performLogout();
+                });
+            }
+
+            const profilePictureForm = document.getElementById('profilePictureForm');
+            if (profilePictureForm) {
+                profilePictureForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+
+                    const file = document.getElementById('newProfilePicture').files[0];
+                    if (!file) {
+                        UI.showMessage('Please choose an image to upload.', 'warning');
+                        return;
+                    }
+
+                    try {
+                        const response = await API.updateProfilePicture(file);
+                        if (response.profile_picture) {
+                            document.getElementById('profilePic').src = response.profile_picture;
+                        }
+                        UI.showMessage('Profile picture updated successfully.', 'success');
+                        profilePictureForm.reset();
+                    } catch (error) {
+                        UI.showMessage(error.message || 'Failed to update profile picture', 'error');
+                    }
+                });
+            }
+
+            const changePasswordForm = document.getElementById('changePasswordForm');
+            if (changePasswordForm) {
+                changePasswordForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+
+                    try {
+                        await API.changePassword({
+                            current_password: document.getElementById('currentPassword').value,
+                            new_password: document.getElementById('newPassword').value,
+                            confirm_password: document.getElementById('confirmPassword').value
+                        });
+
+                        UI.showFormMessage('Password changed successfully. Please log in again.', 'success', 'settingsMessage');
+                        changePasswordForm.reset();
+                        setTimeout(() => {
+                            API.logout();
+                        }, 1200);
+                    } catch (error) {
+                        UI.showFormMessage(error.message || 'Failed to change password', 'error', 'settingsMessage');
+                    }
+                });
+            }
+
+            const deleteAccountForm = document.getElementById('deleteAccountForm');
+            if (deleteAccountForm) {
+                deleteAccountForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+
+                    if (!confirm('Are you sure you want to permanently delete your account?')) {
+                        return;
+                    }
+
+                    try {
+                        await API.deleteAccount(document.getElementById('deletePassword').value);
+                        UI.showFormMessage('Account deleted successfully.', 'success', 'settingsMessage');
+                        API.clearSession();
+                        setTimeout(() => {
+                            window.location.href = '/signup/';
+                        }, 1200);
+                    } catch (error) {
+                        UI.showFormMessage(error.message || 'Failed to delete account', 'error', 'settingsMessage');
+                    }
+                });
+            }
+
+            initProfilePage();
+        });
+    </script>
+</body>
+</html>
