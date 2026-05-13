@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import datetime
+import importlib.util
 import os
 import secrets
 from urllib.parse import urlparse
@@ -109,7 +110,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     #external apps
     'corsheaders',
-    'sslserver',
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
@@ -118,6 +118,9 @@ INSTALLED_APPS = [
     'items',
     'users',
 ]
+
+if DEBUG and importlib.util.find_spec('sslserver'):
+    INSTALLED_APPS.append('sslserver')
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
