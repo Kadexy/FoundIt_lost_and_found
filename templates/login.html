@@ -35,6 +35,12 @@
                     <button type="submit" class="btn btn-primary btn-block">Sign In</button>
                 </form>
 
+                <div id="resendBox" style="display:none; margin-top: 16px; padding: 14px; border: 1px solid #e6e6e6; border-radius: 8px;">
+                    <p style="margin: 0 0 10px; color: #555;">Need a new verification link?</p>
+                    <button type="button" id="resendBtn" class="btn btn-secondary btn-block">Resend Verification Email</button>
+                    <small style="display:block; margin-top:8px; color:#777;">We’ll send it to the email you entered above.</small>
+                </div>
+
                 <div class="auth-link">
                     Don't have an account? <a href="/signup/">Create one</a>
                 </div>
@@ -62,6 +68,8 @@
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            document.getElementById('resendBox').style.display = 'none';
+
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
@@ -74,6 +82,23 @@
             } catch (error) {
                 API.clearSession();
                 UI.showFormMessage(error.message || 'Login failed', 'error');
+                if ((error.message || '').toLowerCase().includes('verify your email')) {
+                    document.getElementById('resendBox').style.display = 'block';
+                }
+            }
+        });
+
+        document.getElementById('resendBtn').addEventListener('click', async () => {
+            const email = document.getElementById('email').value;
+            if (!email) {
+                UI.showFormMessage('Please enter your email first.', 'error', 'loginMessage');
+                return;
+            }
+            try {
+                const result = await API.resendVerificationEmail(email);
+                UI.showFormMessage(result.detail || 'If an account exists for that email, a verification link has been sent.', 'success', 'loginMessage');
+            } catch (error) {
+                UI.showFormMessage(error.message || 'Failed to resend verification email', 'error', 'loginMessage');
             }
         });
     </script>

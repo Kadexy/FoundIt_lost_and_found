@@ -24,6 +24,10 @@ from .serializers import (
 )
 from .models import CustomUser
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 # Create your views here.
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -53,13 +57,19 @@ class SignUpView(generics.GenericAPIView):
             f"Lost and Found Team"
         )
 
-        send_mail(
-            subject=subject,
-            message=message,
-            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', settings.EMAIL_HOST_USER),
-            recipient_list=[user.email],
-            fail_silently=False,
-        )
+        try:
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', settings.EMAIL_HOST_USER),
+                recipient_list=[user.email],
+                fail_silently=False,
+            )
+            return True
+        except Exception:
+            # Don't block signup if SMTP is misconfigured in production.
+            logger.exception("Failed to send verification email", extra={"email": user.email})
+            return False
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
@@ -106,9 +116,14 @@ class SignUpView(generics.GenericAPIView):
                 user.is_active = False
                 user.is_verified = False
                 user.save(update_fields=['is_active', 'is_verified'])
-                self._send_verification_email(request, user)
+                email_sent = self._send_verification_email(request, user)
             return Response({
-                "detail": "Account created. Please check your email to verify your account before signing in.",
+                "detail": (
+                    "Account created. Please check your email to verify your account before signing in."
+                    if email_sent
+                    else "Account created, but we couldn't send a verification email right now. Please contact support/admin."
+                ),
+                "email_sent": email_sent,
                 "user": {
                     'id': user.id,
                     'email': user.email,
@@ -139,6 +154,51 @@ class VerifyEmailView(views.APIView):
             return redirect('/login/?verified=success')
 
         return redirect('/login/?verified=invalid')
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class ResendVerificationEmailView(views.APIView):
+    """
+    Public endpoint to resend verification email.
+    Returns generic responses to avoid email enumeration.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        raw_email = (request.data.get("email") or "").strip().lower()
+        if not raw_email:
+            return Response({"detail": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = CustomUser.objects.get(email=raw_email)
+        except CustomUser.DoesNotExist:
+            return Response(
+                {"detail": "If an account exists for that email, a verification link has been sent."},
+                status=status.HTTP_200_OK,
+            )
+
+        if user.is_verified:
+            return Response({"detail": "This account is already verified. Please sign in."}, status=status.HTTP_200_OK)
+
+        # Reuse signup's email builder logic.
+        try:
+            signup_view = SignUpView()
+            email_sent = signup_view._send_verification_email(request, user)
+        except Exception:
+            logger.exception("Failed to resend verification email", extra={"email": user.email})
+            email_sent = False
+
+        return Response(
+            {
+                "detail": (
+                    "Verification email sent. Please check your inbox."
+                    if email_sent
+                    else "We couldn't send a verification email right now. Please try again later."
+                ),
+                "email_sent": email_sent,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 @method_decorator(csrf_exempt, name='dispatch')
 class LoginView(generics.GenericAPIView):

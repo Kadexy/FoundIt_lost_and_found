@@ -303,6 +303,13 @@ const API = {
         });
     },
 
+    async resendVerificationEmail(email) {
+        return this.request('/user/resend-verification/', {
+            method: 'POST',
+            body: JSON.stringify({ email })
+        });
+    },
+
     // ==================== ITEMS ENDPOINTS ====================
 
     /**
