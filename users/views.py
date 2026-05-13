@@ -8,7 +8,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.conf import settings
-from django.core.mail import send_mail
+from django.core.mail import send_mail, get_connection
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
@@ -58,12 +58,15 @@ class SignUpView(generics.GenericAPIView):
         )
 
         try:
+            # Avoid hanging requests in production: fail fast if SMTP is unreachable.
+            connection = get_connection(timeout=getattr(settings, 'EMAIL_TIMEOUT', 10))
             send_mail(
                 subject=subject,
                 message=message,
                 from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', settings.EMAIL_HOST_USER),
                 recipient_list=[user.email],
                 fail_silently=False,
+                connection=connection,
             )
             return True
         except Exception:
