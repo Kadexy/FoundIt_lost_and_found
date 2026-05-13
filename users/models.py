@@ -23,11 +23,15 @@ class UserManager(BaseUserManager):
         if not password:
             raise ValueError("Password must be provided")
         user_id = extra_fields.pop('id', str(uuid.uuid4()))
-        # Remove user_type from extra_fields to avoid conflict with hardcoded value
-        extra_fields.pop('user_type', None)
-        user = self.model(id=user_id, email=self.normalize_email(email), user_type="ADMIN", **extra_fields)
+        user_type = extra_fields.pop('user_type', 'ADMIN')
+        user = self.model(
+            id=user_id,
+            email=self.normalize_email(email),
+            user_type=user_type,
+            **extra_fields,
+        )
         user.set_password(password)
-        user.save()
+        user.save(using=self._db)
         return user
 
     def create_user(self, email, password=None, firstname=None, lastname=None, **extra_fields):
@@ -63,7 +67,7 @@ class UserManager(BaseUserManager):
         else:
             user.id = str(uuid.uuid4())
         user.set_password(password)
-        user.save()
+        user.save(using=self._db)
         return user
 
     def create_superuser(self, email, password=None, **extra_fields):

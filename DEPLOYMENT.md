@@ -43,7 +43,7 @@ python manage.py createsuperuser
 
 ## Local development
 
-If `DATABASE_URL` is not set, Django uses the local PostgreSQL settings from `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, and `DB_PORT`.
+If `DATABASE_URL` is not set, Django uses the local `db.sqlite3` database by default. Set `USE_LOCAL_POSTGRES=True` to use the local PostgreSQL settings from `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, and `DB_PORT` instead.
 
 ## Render
 

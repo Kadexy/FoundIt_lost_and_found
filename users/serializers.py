@@ -11,7 +11,7 @@ class SignUpSerializer(serializers.ModelSerializer):
     password = serializers.CharField(min_length=8, max_length=68, write_only=True)
     phone = serializers.CharField()
     gender = serializers.ChoiceField(choices=["MALE", "FEMALE"])
-    user_type = serializers.ChoiceField(choices=["STUDENTS", "STAFFS", "ADMIN"])
+    user_type = serializers.ChoiceField(choices=["STUDENTS", "STAFFS"])
     profile_picture = serializers.ImageField(required=False)
     staff_id = serializers.CharField(required=False, allow_blank=True)
     student_id = serializers.CharField(required=False, allow_blank=True)
@@ -29,6 +29,8 @@ class SignUpSerializer(serializers.ModelSerializer):
 
         attrs['email'] = email
         user_type = attrs.get('user_type')
+        if user_type == 'ADMIN':
+            raise serializers.ValidationError({'user_type': 'Admin accounts cannot be created from the public signup form'})
         if user_type == 'STUDENTS':
             if not attrs.get('student_id'):
                 raise serializers.ValidationError("Student ID is required for students")
@@ -40,21 +42,7 @@ class SignUpSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop('confirm_email', None)
         password = validated_data.pop('password')
-        user_type = validated_data.get('user_type', 'STUDENTS')
-        
-        user = CustomUser(**validated_data)
-        user.set_password(password)
-        
-        # Set ID based on user type
-        if user_type == 'STAFFS':
-            user.id = validated_data.get('staff_id')
-        elif user_type == 'STUDENTS':
-            user.id = validated_data.get('student_id')
-        else:
-            user.id = str(uuid.uuid4())
-        
-        user.save()
-        return user
+        return CustomUser.objects.create_user(password=password, **validated_data)
 
 class LoginSerializer(serializers.Serializer):
     """

@@ -100,6 +100,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     #external apps
     'corsheaders',
+    'sslserver',
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
@@ -141,28 +142,20 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'foundIt.wsgi.application'
 
+DATABASE_URL = config('DATABASE_URL', default=None)
 
-DATABASE_URL = config('DATABASE_URL', default='')
+if not DATABASE_URL:
+    DATABASE_URL = (
+        f"postgresql://{config('DB_USER', default='postgres')}"
+        f":{config('DB_PASSWORD', default='')}"
+        f"@{config('DB_HOST', default='127.0.0.1')}"
+        f":{config('DB_PORT', default='5432')}"
+        f"/{config('DB_NAME', default='lost_and_found_db')}"
+    )
 
-if DATABASE_URL:
-    DATABASES = {
-        'default': parse_database_url(DATABASE_URL),
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': config('DB_NAME', default='lost_and_found_db'),
-            'USER': config('DB_USER', default='postgres'),
-            'PASSWORD': config('DB_PASSWORD', default=''),
-            'HOST': config('DB_HOST', default='127.0.0.1'),
-            'PORT': config('DB_PORT', default='5432'),
-            'CONN_MAX_AGE': config('DB_CONN_MAX_AGE', default=60, cast=int),
-            'OPTIONS': {
-                'sslmode': config('DB_SSLMODE', default='prefer'),
-            },
-        }
-    }
+DATABASES = {
+    'default': parse_database_url(DATABASE_URL),
+}
 
 
 # Password validation
@@ -237,17 +230,20 @@ AUTH_USER_MODEL = "users.CustomUser"
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+if not DEBUG:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+else:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
-MEDIA_URL = 'media/'
+MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=not DEBUG, cast=bool)
-SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', default=not DEBUG, cast=bool)
-CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=not DEBUG, cast=bool)
+# SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=not DEBUG, cast=bool)
+# SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', default=not DEBUG, cast=bool)
+# CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=not DEBUG, cast=bool)
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

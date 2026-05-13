@@ -5,6 +5,26 @@
 
 const API = {
     BASE_URL: '/api',
+
+    normalizeResults(payload) {
+        if (Array.isArray(payload)) {
+            return payload;
+        }
+
+        if (payload && Array.isArray(payload.results)) {
+            return payload.results;
+        }
+
+        return [];
+    },
+
+    buildItemEndpoint(itemType, itemId = '') {
+        if (itemType !== 'lost' && itemType !== 'found') {
+            throw new Error('Item type must be "lost" or "found".');
+        }
+
+        return itemId ? `/items/${itemType}/${itemId}/` : `/items/${itemType}/`;
+    },
     
     /**
      * Initialize the API module with base URL
@@ -332,7 +352,7 @@ const API = {
             ? itemData.status 
             : 'found';
         
-        const endpoint = '/items/' + itemStatus + '/';
+        const endpoint = this.buildItemEndpoint(itemStatus);
         
         console.log('Using endpoint:', endpoint, 'for status:', itemStatus);
         
@@ -391,45 +411,32 @@ const API = {
     /**
      * Update an item
      */
-    async updateItem(itemId, itemData) {
+    async updateItem(itemId, itemData, itemType = null) {
+        const resolvedType = itemType || itemData.item_type || itemData.type || itemData.status;
+        const endpoint = this.buildItemEndpoint(resolvedType, itemId);
         const formData = new FormData();
         
         for (const key in itemData) {
+            if (['item_type', 'type', 'status'].includes(key)) {
+                continue;
+            }
+
             if (itemData[key] !== null && itemData[key] !== undefined) {
                 formData.append(key, itemData[key]);
             }
         }
 
-        const token = localStorage.getItem('access_token');
-        const headers = {
-            'Authorization': `Bearer ${token}`
-        };
-
-        try {
-            const response = await fetch(`${this.BASE_URL}/items/${itemId}/`, {
-                method: 'PATCH',
-                headers,
-                body: formData
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || data.detail || 'Failed to update item');
-            }
-
-            return data;
-        } catch (error) {
-            console.error('Update Item Error:', error);
-            throw error;
-        }
+        return this.request(endpoint, {
+            method: 'PATCH',
+            body: formData
+        });
     },
 
     /**
      * Delete an item
      */
-    async deleteItem(itemId) {
-        return this.request(`/items/${itemId}/`, {
+    async deleteItem(itemId, itemType) {
+        return this.request(this.buildItemEndpoint(itemType, itemId), {
             method: 'DELETE'
         });
     }

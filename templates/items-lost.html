@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lost Items - Lost and Found</title>
-    <link rel="stylesheet" href="{% static 'css/modern.css' %}">
+    <link rel="stylesheet" href="{% static 'css/modern.css' %}?v=3">
 </head>
 <body>
     <header>
@@ -57,8 +57,8 @@
         <p>&copy; 2024 Lost & Found Application. All rights reserved.</p>
     </footer>
 
-    <script src="{% static 'js/api.js' %}?v=2"></script>
-    <script src="{% static 'js/ui.js' %}"></script>
+    <script src="{% static 'js/api.js' %}?v=3"></script>
+    <script src="{% static 'js/ui.js' %}?v=3"></script>
     <script>
         API.init('/api');
 
@@ -84,7 +84,7 @@
                 populateFilters();
 
                 // Display items
-                displayItems(allLostItems.results);
+                displayItems(API.normalizeResults(allLostItems));
             } catch (error) {
                 UI.showMessage(error.message, 'error');
                 document.getElementById('itemsContainer').innerHTML = 
@@ -96,14 +96,14 @@
             const categorySelect = document.getElementById('categoryFilter');
             const locationSelect = document.getElementById('locationFilter');
 
-            allCategories.results.forEach(cat => {
+            API.normalizeResults(allCategories).forEach(cat => {
                 const option = document.createElement('option');
                 option.value = cat.id;
                 option.textContent = cat.name;
                 categorySelect.appendChild(option);
             });
 
-            allLocations.results.forEach(loc => {
+            API.normalizeResults(allLocations).forEach(loc => {
                 const option = document.createElement('option');
                 option.value = loc.id;
                 option.textContent = loc.name;
@@ -135,7 +135,7 @@
         }
 
         function applyFilters() {
-            let filtered = [...allLostItems.results];
+            let filtered = [...API.normalizeResults(allLostItems)];
 
             const categoryFilter = document.getElementById('categoryFilter').value;
             const locationFilter = document.getElementById('locationFilter').value;

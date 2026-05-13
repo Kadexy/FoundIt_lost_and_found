@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Report Item - Lost and Found</title>
-    <link rel="stylesheet" href="{% static 'css/modern.css' %}">
+    <link rel="stylesheet" href="{% static 'css/modern.css' %}?v=3">
 </head>
 <body>
     <header>
@@ -112,8 +112,8 @@
         <p>&copy; 2024 Lost & Found Application. All rights reserved.</p>
     </footer>
 
-    <script src="{% static 'js/api.js' %}?v=2"></script>
-    <script src="{% static 'js/ui.js' %}?v=2"></script>
+    <script src="{% static 'js/api.js' %}?v=3"></script>
+    <script src="{% static 'js/ui.js' %}?v=3"></script>
     <script>
         API.init('/api');
 
@@ -167,13 +167,15 @@
                 try {
                     const categories = await API.getCategories();
                     const locations = await API.getLocations();
+                    const categoryList = API.normalizeResults(categories);
+                    const locationList = API.normalizeResults(locations);
 
                     const categorySelect = document.getElementById('category');
                     const locationSelect = document.getElementById('location');
                     const droppedLocationSelect = document.getElementById('dropped_location');
 
-                    if (categories.results && Array.isArray(categories.results)) {
-                        categories.results.forEach(cat => {
+                    if (categoryList.length > 0) {
+                        categoryList.forEach(cat => {
                             const option = document.createElement('option');
                             option.value = cat.id;
                             option.textContent = cat.name;
@@ -184,8 +186,8 @@
                         UI.showMessage('Error loading categories', 'error');
                     }
 
-                    if (locations.results && Array.isArray(locations.results)) {
-                        locations.results.forEach(loc => {
+                    if (locationList.length > 0) {
+                        locationList.forEach(loc => {
                             const option = document.createElement('option');
                             option.value = loc.id;
                             option.textContent = loc.name;
@@ -205,6 +207,9 @@
             // Form submission handler
             document.getElementById('reportForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
+                
+                const submitBtn = e.target.querySelector('button[type="submit"]');
+                UI.setButtonLoading(submitBtn, true, 'Reporting...');
 
                 // Collect form data
                 const reportData = {
@@ -249,6 +254,7 @@
                         }
                     }, 1500);
                 } catch (error) {
+                    UI.setButtonLoading(submitBtn, false);
                     console.error('Report submission error:', error);
                     UI.showMessage(error.message || 'Failed to report item', 'error');
                 }

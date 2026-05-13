@@ -106,6 +106,33 @@ const UI = {
     },
 
     /**
+     * Set button loading state to prevent double clicks
+     */
+    setButtonLoading(button, isLoading, loadingText = 'Loading...') {
+        if (!button) return;
+        
+        if (isLoading) {
+            if (!button.dataset.originalText) {
+                button.dataset.originalText = button.innerHTML;
+            }
+            button.disabled = true;
+            button.innerHTML = `<span class="spinner-inline" style="display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,0.3); border-radius:50%; border-top-color:#fff; animation:spin 1s linear infinite; margin-right:8px; vertical-align:middle;"></span>${loadingText}`;
+            
+            if (!document.getElementById('spinner-keyframes')) {
+                const style = document.createElement('style');
+                style.id = 'spinner-keyframes';
+                style.innerHTML = '@keyframes spin { to { transform: rotate(360deg); } }';
+                document.head.appendChild(style);
+            }
+        } else {
+            button.disabled = false;
+            if (button.dataset.originalText) {
+                button.innerHTML = button.dataset.originalText;
+            }
+        }
+    },
+
+    /**
      * Render item card HTML
      */
     renderItemCard(item, type = 'lost') {
@@ -175,21 +202,28 @@ const UI = {
     },
 
     /**
+     * Ensure the current page is only accessible to signed-in users.
+     */
+    requireAuth() {
+        if (typeof API === 'undefined' || typeof API.isAuthenticated !== 'function') {
+            console.error('API authentication helper is unavailable.');
+            this.showMessage('Authentication check failed. Please refresh and try again.', 'error');
+            return false;
+        }
+
+        if (!API.isAuthenticated()) {
+            window.location.href = '/login/';
+            return false;
+        }
+
+        return true;
+    },
+
+    /**
      * Redirect to page
      */
     redirect(url) {
         window.location.href = url;
-    },
-
-    /**
-     * Check if user is authenticated, redirect if not
-     */
-    requireAuth() {
-        if (!API.isAuthenticated()) {
-            this.redirect('/login/');
-            return false;
-        }
-        return true;
     }
 };
 

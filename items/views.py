@@ -133,7 +133,7 @@ class LostReportViewSet(ModelViewSet):
                 message=message,
                 from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', settings.EMAIL_HOST_USER),
                 recipient_list=recipient_list,
-                fail_silently=False,
+                fail_silently=True,
             )
         except Exception:
             logger.exception("Failed to send notification email", extra={"recipient_list": recipient_list, "subject": subject})
@@ -143,10 +143,10 @@ class LostReportViewSet(ModelViewSet):
             return
 
         location_text = report.location.name if report.location else 'No specific location was provided.'
-        subject = f"Lost item report received: {report.title}"
+        subject = f"Item reported successfully: {report.title}"
         message = (
             f"Hello {report.reporter.firstname},\n\n"
-            f"We have received your lost item report for the following item:\n"
+            f"Your item has been reported successfully. We have received your lost item report for the following item:\n"
             f"- Category: {report.category.name}\n"
             f"- Title: {report.title}\n"
             f"- Description: {report.description}\n"
@@ -225,7 +225,40 @@ class FoundReportViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         report = serializer.save()
+        self.send_found_report_notification(report)
         self.auto_match_found_report(report)
+
+    def send_found_report_notification(self, report):
+        if not report.reporter.email:
+            return
+
+        location_text = report.location.name if report.location else 'No specific location was provided.'
+        subject = f"Item reported successfully: {report.title}"
+        message = (
+            f"Hello {report.reporter.firstname},\n\n"
+            f"Your item has been reported successfully. Thank you for helping the community!\n\n"
+            f"We have received your found item report for the following item:\n"
+            f"- Category: {report.category.name}\n"
+            f"- Title: {report.title}\n"
+            f"- Description: {report.description}\n"
+            f"- Location found: {location_text}\n\n"
+            f"We will notify you if an owner claims this item.\n\n"
+            f"Regards,\n"
+            f"Lost and Found Team"
+        )
+        
+        from django.conf import settings
+        from django.core.mail import send_mail
+        try:
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', settings.EMAIL_HOST_USER),
+                recipient_list=[report.reporter.email],
+                fail_silently=True,
+            )
+        except Exception:
+            logger.exception("Failed to send found report confirmation email", extra={"recipient_list": [report.reporter.email]})
 
     def perform_destroy(self, instance):
         if instance.reporter != self.request.user and self.request.user.user_type not in ['STAFFS', 'ADMIN']:
@@ -321,7 +354,7 @@ class FoundReportViewSet(ModelViewSet):
                         message=message,
                         from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', settings.EMAIL_HOST_USER),
                         recipient_list=[best_match.reporter.email],
-                        fail_silently=False,
+                        fail_silently=True,
                     )
                 except Exception:
                     logger.exception(

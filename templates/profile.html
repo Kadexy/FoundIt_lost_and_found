@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profile - Lost and Found</title>
-    <link rel="stylesheet" href="{% static 'css/modern.css' %}">
+    <link rel="stylesheet" href="{% static 'css/modern.css' %}?v=3">
 </head>
 <body>
     <header>
@@ -155,8 +155,8 @@
         <p>&copy; 2024 Lost & Found Application. All rights reserved.</p>
     </footer>
 
-    <script src="{% static 'js/api.js' %}?v=2"></script>
-    <script src="{% static 'js/ui.js' %}"></script>
+    <script src="{% static 'js/api.js' %}?v=3"></script>
+    <script src="{% static 'js/ui.js' %}?v=3"></script>
     <script>
         function initProfilePage() {
             API.init('/api');
@@ -211,12 +211,14 @@
                 const foundItems = await API.getFoundItems();
                 const user = API.getCurrentUser();
 
-                const myItems = [...lostItems.results, ...foundItems.results].filter(item =>
+                const normalizedLostItems = API.normalizeResults(lostItems);
+                const normalizedFoundItems = API.normalizeResults(foundItems);
+                const myItems = [...normalizedLostItems, ...normalizedFoundItems].filter(item =>
                     item.reporter === user.email || item.reporter && item.reporter.includes(user.email)
                 );
 
-                document.getElementById('lostCount').textContent = lostItems.results.length;
-                document.getElementById('foundCount').textContent = foundItems.results.length;
+                document.getElementById('lostCount').textContent = normalizedLostItems.length;
+                document.getElementById('foundCount').textContent = normalizedFoundItems.length;
 
                 if (myItems.length === 0) {
                     container.innerHTML = '<div class="empty-state"><p>You haven\'t reported any items yet</p><a href="/report/" class="btn btn-primary">Report an Item</a></div>';

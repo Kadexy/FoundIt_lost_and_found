@@ -11,8 +11,12 @@ class EmailBackend(ModelBackend):
     Custom authentication backend that authenticates using email instead of username
     """
     def authenticate(self, request, username=None, password=None, **kwargs):
+        email = username or kwargs.get(User.USERNAME_FIELD) or kwargs.get('email')
+        if not email or password is None:
+            return None
+
         try:
-            user = User.objects.get(email=username)
+            user = User.objects.get(email=email)
         except User.DoesNotExist:
             return None
 

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Lost and Found</title>
-    <link rel="stylesheet" href="{% static 'css/modern.css' %}">
+    <link rel="stylesheet" href="{% static 'css/modern.css' %}?v=3">
 </head>
 <body>
     <header>
@@ -79,8 +79,8 @@
         <p>&copy; 2024 Lost & Found Application. All rights reserved.</p>
     </footer>
 
-    <script src="{% static 'js/api.js' %}?v=2"></script>
-    <script src="{% static 'js/ui.js' %}"></script>
+    <script src="{% static 'js/api.js' %}?v=3"></script>
+    <script src="{% static 'js/ui.js' %}?v=3"></script>
     <script>
         API.init('/api');
 
@@ -109,8 +109,8 @@
                     const foundItems = await API.getFoundItems();
 
                     // Show first 3 recent items
-                    const recentLost = lostItems.results.slice(0, 3);
-                    const recentFound = foundItems.results.slice(0, 3);
+                    const recentLost = API.normalizeResults(lostItems).slice(0, 3);
+                    const recentFound = API.normalizeResults(foundItems).slice(0, 3);
 
                     if (recentLost.length === 0) {
                         lostContainer.innerHTML = '<div class="empty-state"><p>No lost items reported yet</p></div>';
