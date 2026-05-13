@@ -15,6 +15,8 @@ services:
         sync: false
       - key: CORS_ALLOW_ALL_ORIGINS
         value: "False"
+      - key: WHITENOISE_USE_FINDERS
+        value: "True"
       - key: DB_SSLMODE
         value: require
       - key: DB_CONN_MAX_AGE

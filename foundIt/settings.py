@@ -245,10 +245,28 @@ AUTH_USER_MODEL = "users.CustomUser"
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+
+# Django 4.2+ prefers configuring static storage via STORAGES["staticfiles"].
+# Keep STATICFILES_STORAGE for compatibility with older Django versions.
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {
+        "BACKEND": (
+            "whitenoise.storage.CompressedStaticFilesStorage"
+            if not DEBUG
+            else "django.contrib.staticfiles.storage.StaticFilesStorage"
+        )
+    },
+}
+
 if not DEBUG:
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 else:
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+
+# If collectstatic doesn't populate STATIC_ROOT on the platform, this allows
+# WhiteNoise to fall back to Django's static file finders.
+WHITENOISE_USE_FINDERS = config('WHITENOISE_USE_FINDERS', default=DEBUG, cast=bool)
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
